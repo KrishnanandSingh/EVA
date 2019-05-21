@@ -1,24 +1,9 @@
 # Architectural Basics
 
 EVA: Assignment 4
+Order is chosen based on what I think would be required when one starts working on a problem.
 
 **Assumption:** Object size is equal to the image size.
-
-## How many layers
-
-The focus should be on reaching the full image/object size. We would add as many layers as required to reach the receptive field of the image. The final layer should be such that it has seen the whole image/object. Number of layers would vary depending on the max pool and the convolutions layers used.
-
-## MaxPooling
-
-Our objective is that the receptive field of the final layer should be equal to the input image. To reach this objective we can use only convolutions but this approach will create a large number of parameters and a lot of convolutions. In max pool we let forward only those values which stand out. So by adding a maxpooling layer we don't loose relevant information and the receptive field is also reduced(half if 2x2 is used). This helps us to reach our objective faster. That being said, max pool should not be used closer to the output layer as we don't want to loose *any* information at this level. And also we want to do some convolutions before doing a max pool so it should be used at  appropriate positions.
-
-## 1x1 Convolutions
-
-Think of this as a channel mixer. After we have done a few convolutions(lets say our filters have starting to recognize textures), now instead of reconvoluting, existing channels are used to create more complex channels. Also this helps in reducing the number of parameters.
-
-## 3x3 Convolutions
-
-The smaller the kernel the easier the convolution. Even size kernels are not useful as they don't have a line of symmetry and we cannot extract any pattern with 1x1. So 3x3 is the smallest kernel we have that is useful. Also GPU manufactureres like Nvidia have optimized the GPU for this kernel. Convolution with any higher kernel can be achieved by using combination of 3x3 kernels. (e.g. 5x5 is same as 3x3 followed by 3x3)
 
 ## Receptive Field
 
@@ -26,60 +11,49 @@ The number of pixels a block in output has convoluted on directly is called loca
 
 To get a good prediction we would need the network to have seen the whole image(assuming object size is equal to the image size).
 
-## SoftMax
+## Image Normalization
 
+Neural networks work well with floats. So we convert the images from uint(0-255) to float(0-1) values. This is called image normalization.
 
-## Learning Rate
+## 3x3 Convolutions
 
+The smaller the kernel the easier the convolution. Even size kernels are not useful as they don't have a line of symmetry and we cannot extract any pattern with 1x1. So 3x3 is the smallest kernel we have that is useful. Also GPU manufactureres like Nvidia have optimized the GPU for this kernel. Convolution with any higher kernel can be achieved by using combination of 3x3 kernels. (e.g. 5x5 is same as 3x3 followed by 3x3)
+
+## How many layers
+
+The focus should be on reaching the full image/object size. We would add as many layers as required to reach the receptive field of the image. The final layer should be such that it has seen the whole image/object. Number of layers would vary depending on the max pool and the convolutions layers used.
 
 ## Kernels and how do we decide the number of kernels?
 
+Kernels are the feature extractors. Number of kernels in a layer usually depends on the expressivity required at that receptive field.
 
-## Batch Normalization
+## MaxPooling
 
-
-## Image Normalization
-
+Our objective is that the receptive field of the final layer should be equal to the input image. To reach this objective we can use only convolutions but this approach will create a large number of parameters and a lot of convolutions. In max pool we let forward only those values which stand out. So by adding a maxpooling layer we don't loose relevant information and the receptive field is also reduced(half if 2x2 is used). This helps us to reach our objective faster. That being said, max pool should not be used closer to the output layer as we don't want to loose *any* information at this level. And also we want to do some convolutions before doing a max pool so it should be used at  appropriate positions.
 
 ## Position of MaxPooling
 
-
-## Concept of Transition Layers
-
-
-## Position of Transition Layer
-
-
-## Number of Epochs and when to increase them
-
-
-## DropOut
-
-
-## The distance of Batch Normalization from Prediction
-
-
-## When do we stop convolutions and go ahead with a larger kernel or some other alternative (which we have not yet covered)
-
-## When to add validation checks
-
-TODO:
-```py
-model.fit(X_train, Y_train, batch_size=32, nb_epoch=6, verbose=1, validation_data=(X_test, Y_test))
-
-## When do we introduce DropOut, or when do we know we have some overfitting
-
-When we observe that our network is doing very well on the training data but doing poor on the validation data. In other words when the training accuracy is high but the validation accuracy is low we know that the model is overfitting. At this stage we introduce Dropout.
+We do maxpooling only when we have convolved twice or more and we don't do it near the prediction layer.
 
 ## The distance of MaxPooling from Prediction
 
-Max pooling helps us reaching the receptive pool faster but it should not be used closer to the prediction layer. As by using max pool we loose all values other than the max ones. This may not be an issue when our global receptive field is small but when we go up the network the values become more relevant than before. Before the prediction layer we don't want to loose *any* information so we don't do max pools before 3 layers.
+Max pooling helps us reaching the receptive field faster but it should not be used closer to the prediction layer. As by using max pool we loose all values other than the max ones. This may not be an issue when our global receptive field is small but when we go up the network the values become more relevant than before. Before the prediction layer we don't want to loose *any* information so we don't do max pools before 2-3 layers.
 
-```
+## 1x1 Convolutions
 
-## How do we know our network is not going well, comparatively, very early
+Think of this as a channel mixer. After we have done a few convolutions(lets say our filters have starting to recognize textures), now instead of reconvoluting, existing channels are used to create more complex channels. Also this helps in reducing the number of parameters.
 
-Always use test data as validation data. Now after each epoch we get to see the actual validation accuracy. If the validation accuracy for the first epoch is worse than the previous network the current one is not a better network.
+## Concept of Transition Layers
+
+Between the convolution blocks transition layer is used. 1x1 convolution is used here which creates complex features from the existing ones and also leads in the reduction of parameters. This is called squeeze and excitation.
+
+## Position of Transition Layer
+
+Once we have done enough convolutions i.e. we have extracted some features we add transition layers to create complex features from them.
+
+## When do we stop convolutions and go ahead with a larger kernel or some other alternative (which we have not yet covered)
+
+When we are near the prediction layer and have to complete the receptive field to get the required number of output classes we can go ahead with a larger kernel or use Flatten to achieve this.
 
 ## Batch Size, and effects of batch size
 
@@ -93,6 +67,27 @@ If we have unlimited GPU, the greater the batch size the faster the training. Bu
 
 With a larger batch size the network gets to see more training data at a time so it can adjust better. But note that with a smaller batch size the network gets more oppurtunities to learn. So if we have a higher batch size we can use higher learning rate.
 
+## When to add validation checks
+
+We add validation checks at each epoch. This is done by passing the test data to the *validation_data* parameter in *model.fit* function.
+
+```py
+model.fit(X_train, Y_train, batch_size=32, nb_epoch=6, verbose=1, validation_data=(X_test, Y_test))
+```
+
+This way we get to know how our network is performing after each epoch.
+
+## How do we know our network is not going well, comparatively, very early
+
+Always use test data as validation data. Now after each epoch we get to see the actual validation accuracy. If the validation accuracy for the first epoch is worse than the previous network the current one is not a better network.
+
+## Number of Epochs and when to increase them
+
+When the network has starting training, we look for the training accuracy. As long as the training accuracy is increasing we can increase the number of epochs.
+
+## Learning Rate
+
+A measure of how much a network can adjust itself(by back propogation) to minimise the recently calculated loss.
 
 ## LR schedule and concept behind it
 
@@ -101,3 +96,23 @@ When the network is approaching global minima the LR should be low. If the learn
 ## Adam vs SGD
 
 There is no clear consensus on which one is better. Both work pretty well.
+
+## Batch Normalization
+
+When few activations are very high and others are very low, we want to normalize them so that lower values do not get lost as every activation is relevant for final prediction.
+
+## The distance of Batch Normalization from Prediction
+
+If we use BN layer near the prediction I think normalization will make prediction outputs closer to each other but the loss function and backpropogation will still make a way to work well.
+
+## When do we introduce DropOut, or when do we know we have some overfitting
+
+When we observe that our network is doing very well on the training data but doing poor on the validation data. In other words when the training accuracy is high but the validation accuracy is low we know that the model is overfitting. At this stage we introduce Dropout.
+
+## DropOut
+
+Restriciting a few neurons to send their output to the next layer is called Dropout. When we use dropout, in each learning iteration(batch) a few neurons are turned off. When these few neurons are turned off, other ones take their job and learn more to achieve the result. This way the model learns better. Dropout is applicable only at the learning time. After the model is trained every neuron works to predict the output.
+
+## SoftMax
+
+Softmax is a probability like function which means that summation of softmax values of a set leads to 1. For a given set of values this functions enlarges the differences between them. This is calculated by *e^x* / (summation of *e^x* of all given numbers).
