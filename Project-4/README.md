@@ -1,9 +1,12 @@
 # Architectural Basics
 
 EVA: Assignment 4
+
 Order is chosen based on what I think would be required when one starts working on a problem.
 
 **Assumption:** Object size is equal to the image size.
+
+---
 
 ## Receptive Field
 
